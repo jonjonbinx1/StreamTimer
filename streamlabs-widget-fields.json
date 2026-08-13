@@ -1,0 +1,172 @@
+{
+  "title": {
+    "label": "Title",
+    "type": "textfield",
+    "value": ""
+  },
+  "mode": {
+    "label": "Mode",
+    "type": "dropdown",
+    "options": {
+      "countdown": "Count down",
+      "countup": "Count up"
+    },
+    "value": "countdown"
+  },
+  "layout": {
+    "label": "Layout",
+    "type": "dropdown",
+    "options": {
+      "stacked": "Stacked",
+      "split": "Split",
+      "compact": "Compact"
+    },
+    "value": "stacked"
+  },
+  "hours": {
+    "label": "Countdown hours",
+    "type": "slider",
+    "value": 0,
+    "max": 24,
+    "min": 0,
+    "steps": 1
+  },
+  "minutes": {
+    "label": "Countdown minutes",
+    "type": "slider",
+    "value": 10,
+    "max": 59,
+    "min": 0,
+    "steps": 1
+  },
+  "seconds": {
+    "label": "Countdown seconds",
+    "type": "slider",
+    "value": 0,
+    "max": 59,
+    "min": 0,
+    "steps": 1
+  },
+  "countupHours": {
+    "label": "Count-up start hours",
+    "type": "slider",
+    "value": 0,
+    "max": 24,
+    "min": 0,
+    "steps": 1
+  },
+  "countupMinutes": {
+    "label": "Count-up start minutes",
+    "type": "slider",
+    "value": 0,
+    "max": 59,
+    "min": 0,
+    "steps": 1
+  },
+  "countupSeconds": {
+    "label": "Count-up start seconds",
+    "type": "slider",
+    "value": 0,
+    "max": 59,
+    "min": 0,
+    "steps": 1
+  },
+  "titleColor": {
+    "label": "Title color",
+    "type": "colorpicker",
+    "value": "#f8fafc"
+  },
+  "timerColor": {
+    "label": "Timer color",
+    "type": "colorpicker",
+    "value": "#fbbf24"
+  },
+  "backgroundColor": {
+    "label": "Background color",
+    "type": "colorpicker",
+    "value": "#08111f"
+  },
+  "backgroundOpacity": {
+    "label": "Background opacity",
+    "type": "slider",
+    "value": 0,
+    "max": 100,
+    "min": 0,
+    "steps": 1
+  },
+  "showOutline": {
+    "label": "Show timer box outline",
+    "type": "dropdown",
+    "options": {
+      "true": "Show",
+      "false": "Hide"
+    },
+    "value": "true"
+  },
+  "outlineColor": {
+    "label": "Outline color",
+    "type": "colorpicker",
+    "value": "#f8fafc"
+  },
+  "outlineOpacity": {
+    "label": "Outline opacity",
+    "type": "slider",
+    "value": 18,
+    "max": 100,
+    "min": 0,
+    "steps": 1
+  },
+  "imageUrl": {
+    "label": "Overlay image",
+    "type": "image-input",
+    "value": null
+  },
+  "showImage": {
+    "label": "Show image",
+    "type": "dropdown",
+    "options": {
+      "true": "Show",
+      "false": "Hide"
+    },
+    "value": "true"
+  },
+  "imageLayer": {
+    "label": "Image layer",
+    "type": "dropdown",
+    "options": {
+      "behind": "Behind timer",
+      "front": "In front of timer"
+    },
+    "value": "behind"
+  },
+  "imagePlacement": {
+    "label": "Image placement",
+    "type": "dropdown",
+    "options": {
+      "center": "Center",
+      "top-left": "Top left",
+      "top-right": "Top right",
+      "bottom-left": "Bottom left",
+      "bottom-right": "Bottom right"
+    },
+    "value": "center"
+  },
+  "imageSize": {
+    "label": "Image size",
+    "type": "slider",
+    "value": 72,
+    "max": 240,
+    "min": 24,
+    "steps": 1
+  },
+  "fontFamily": {
+    "label": "Timer font",
+    "type": "fontpicker",
+    "value": "Space Grotesk"
+  },
+  "soundUrl": {
+    "label": "Finish sound (optional)",
+    "type": "sound-input",
+    "value": null
+  }
+}

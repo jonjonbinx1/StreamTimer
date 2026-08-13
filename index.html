@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stream Timer</title>
+    <meta
+      name="description"
+      content="Design a stream timer, preview the browser source, and copy a shareable URL for streaming software."
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <main class="workspace" id="helperView">
+        <section class="panel controls">
+          <div class="panel-heading">
+            <div>
+              <h2>Customize the overlay</h2>
+            </div>
+            <button class="ghost-button" id="resetButton" type="button">Reset</button>
+          </div>
+
+          <form class="controls-grid" id="timerForm">
+            <label class="field field-wide">
+              <span>Title</span>
+              <input id="titleInput" name="title" type="text" maxlength="60" placeholder="Optional title" />
+            </label>
+
+            <label class="field">
+              <span>Mode</span>
+              <select id="modeInput" name="mode">
+                <option value="countdown">Count down</option>
+                <option value="countup">Count up</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Layout</span>
+              <select id="layoutInput" name="layout">
+                <option value="stacked">Stacked</option>
+                <option value="split">Split</option>
+                <option value="compact">Compact</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Hours</span>
+              <input id="hoursInput" name="hours" type="number" min="0" max="24" value="0" />
+            </label>
+
+            <label class="field">
+              <span>Minutes</span>
+              <input id="minutesInput" name="minutes" type="number" min="0" max="59" value="10" />
+            </label>
+
+            <label class="field">
+              <span>Seconds</span>
+              <input id="secondsInput" name="seconds" type="number" min="0" max="59" value="0" />
+            </label>
+
+            <label class="field">
+              <span>Count-up start hours</span>
+              <input id="countupHoursInput" name="countupHours" type="number" min="0" max="24" value="0" />
+            </label>
+
+            <label class="field">
+              <span>Count-up start minutes</span>
+              <input id="countupMinutesInput" name="countupMinutes" type="number" min="0" max="59" value="0" />
+            </label>
+
+            <label class="field">
+              <span>Count-up start seconds</span>
+              <input id="countupSecondsInput" name="countupSeconds" type="number" min="0" max="59" value="0" />
+            </label>
+
+            <label class="field">
+              <span>Title color</span>
+              <input id="titleColorInput" name="titleColor" type="color" value="#f8fafc" />
+            </label>
+
+            <label class="field">
+              <span>Timer color</span>
+              <input id="timerColorInput" name="timerColor" type="color" value="#fbbf24" />
+            </label>
+
+            <label class="field">
+              <span>Accent color</span>
+              <input id="accentColorInput" name="accentColor" type="color" value="#22c55e" />
+            </label>
+
+            <label class="field field-wide">
+              <span>Image URL</span>
+              <input
+                id="imageUrlInput"
+                name="imageUrl"
+                type="url"
+                placeholder="https://example.com/artwork.png"
+              />
+            </label>
+
+            <label class="field field-wide upload-field">
+              <span>Or upload an image</span>
+              <input id="imageFileInput" name="imageFile" type="file" accept="image/*" />
+            </label>
+
+            <p class="field-hint field-wide">Drag the image inside the preview to place it anywhere in the timer box.</p>
+
+            <label class="field">
+              <span>Image layer</span>
+              <select id="imageLayerInput" name="imageLayer">
+                <option value="behind">Behind box</option>
+                <option value="front">In front of box</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Image placement</span>
+              <select id="imagePlacementInput" name="imagePlacement">
+                <option value="manual">Custom</option>
+                <option value="center">Centered</option>
+                <option value="top-left">Top left</option>
+                <option value="top-right">Top right</option>
+                <option value="bottom-left">Bottom left</option>
+                <option value="bottom-right">Bottom right</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Image size <strong id="imageSizeValue">72px</strong></span>
+              <input id="imageSizeInput" name="imageSize" type="range" min="24" max="240" value="72" />
+            </label>
+
+            <label class="field field-wide toggle-field">
+              <input id="showImageInput" name="showImage" type="checkbox" checked />
+              <span>Show image in the overlay</span>
+            </label>
+
+            <label class="field field-wide">
+              <span>Background color</span>
+              <input id="backgroundColorInput" name="backgroundColor" type="color" value="#08111f" />
+            </label>
+
+            <label class="field field-wide">
+              <span>Background opacity <strong id="backgroundOpacityValue">78%</strong></span>
+              <input id="backgroundOpacityInput" name="backgroundOpacity" type="range" min="0" max="100" value="78" />
+            </label>
+
+            <label class="field field-wide toggle-field">
+              <input id="showOutlineInput" name="showOutline" type="checkbox" checked />
+              <span>Show timer box outline</span>
+            </label>
+
+            <label class="field">
+              <span>Outline color</span>
+              <input id="outlineColorInput" name="outlineColor" type="color" value="#f8fafc" />
+            </label>
+
+            <label class="field">
+              <span>Outline opacity <strong id="outlineOpacityValue">18%</strong></span>
+              <input id="outlineOpacityInput" name="outlineOpacity" type="range" min="0" max="100" value="18" />
+            </label>
+
+            <label class="field field-wide">
+              <span>Timer font</span>
+              <select id="fontFamilyInput" name="fontFamily">
+                <option value="space">Space Grotesk</option>
+                <option value="pokemon">Pokemon-style pixel</option>
+                <option value="display">Bold display</option>
+              </select>
+            </label>
+          </form>
+
+          <div class="action-row">
+            <button class="primary-button" id="copyUrlButton" type="button">Copy browser-source URL</button>
+            <button class="secondary-button" id="openSourceButton" type="button">Open source preview</button>
+          </div>
+          <p class="feedback" id="copyFeedback" aria-live="polite"></p>
+        </section>
+
+        <section class="panel preview-panel">
+          <div class="panel-heading">
+            <h2>What streaming software will show</h2>
+          </div>
+
+          <div class="preview-frame">
+            <div class="timer-stage" id="previewStage">
+              <img id="previewImage" class="widget-image" alt="Overlay artwork preview" />
+              <article class="timer-widget stacked" id="previewWidget" aria-label="Timer preview">
+                <div class="widget-copy">
+                  <h3 id="previewTitle"></h3>
+                </div>
+                <div class="widget-time" id="previewTime">10:00</div>
+              </article>
+            </div>
+          </div>
+
+          <div class="source-url-card">
+            <div>
+              <code id="sourceUrlPreview">Select a configuration to generate the link.</code>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <section class="source-view hidden" id="sourceView" aria-label="Browser source view">
+        <div class="timer-stage" id="sourceStage">
+          <img id="sourceImage" class="widget-image" alt="Overlay artwork" />
+          <article class="timer-widget" id="sourceWidget">
+            <div class="widget-copy">
+              <h3 id="sourceTitle"></h3>
+            </div>
+            <div class="widget-time" id="sourceTime">10:00</div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
