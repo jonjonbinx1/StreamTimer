@@ -1,5 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&family=Bangers&display=swap');
 
+@font-face {
+  font-family: 'Pokemon Solid';
+  src: url('./fonts/Pokemon Solid.ttf') format('truetype');
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
   --bg: #07111f;

@@ -88,7 +88,7 @@ const getFontFamily = (fontKey, customFontFamily = '') => {
 
   switch (fontKey) {
     case 'pokemon':
-      return '"Press Start 2P", monospace';
+      return '"Pokemon Solid", "Press Start 2P", monospace';
     case 'display':
       return '"Bangers", "Trebuchet MS", sans-serif';
     default:

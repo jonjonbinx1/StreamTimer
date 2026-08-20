@@ -146,7 +146,7 @@ const escapeCssString = (value) => String(value).replace(/\\/g, '\\\\').replace(
 
 const fontFamily = (font) => {
   const normalized = String(font || '').trim().toLowerCase();
-  if (normalized === 'pokemon' || normalized === 'press start 2p') return '"Press Start 2P", monospace';
+  if (normalized === 'pokemon' || normalized === 'press start 2p') return '"Pokemon Solid", "Press Start 2P", monospace';
   if (normalized === 'display' || normalized === 'bangers') return '"Bangers", "Trebuchet MS", sans-serif';
   if (normalized === 'custom') {
     const customFont = String(settings.customFontFamily || '').trim();
