@@ -86,7 +86,17 @@ with a publicly reachable or otherwise hosted font file.
 
 ## Local preview
 
-If you want to run this locally without a build step, start any static file server in the project folder, for example:
+If you want the helper page to control a browser source running in OBS or another separate app, start the included Node server instead of a plain static file server:
+
+```powershell
+node server.js
+```
+
+Then open `http://localhost:5173` and use the generated browser-source URL from that same origin.
+
+The Node server provides a small shared timer-control API at `/api/timer-control`, which is what makes **Pause timer** and **Restart timer** affect the browser source outside your normal browser.
+
+If you only want a static local preview without cross-app control, you can still use any static file server in the project folder, for example:
 
 ```powershell
 python -m http.server 5173

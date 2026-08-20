@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'stream-timer-helper-state';
 const TIMER_CONTROL_KEY = 'stream-timer-control';
+const TIMER_CONTROL_API_PATH = '/api/timer-control';
 const STORAGE_VERSION = 2;
 const DEFAULT_STATE = {
   title: '',
@@ -39,6 +40,8 @@ let sourceTimer = null;
 let liveState = null;
 let dragPointerId = null;
 let timerControl = null;
+let controlSyncTimer = null;
+let apiControlEnabled = false;
 
 const clampNumber = (value, min, max) => {
   const numeric = Number.parseInt(String(value), 10);
@@ -180,6 +183,91 @@ const resumeTimer = () => {
 };
 
 const restartTimer = () => syncTimerControl(createDefaultTimerControl());
+
+const getTimerControlEndpoint = () => new URL(TIMER_CONTROL_API_PATH, window.location.href);
+
+const syncTimerControlFromServer = (serverControl) => {
+  const status = serverControl?.status === 'paused' ? 'paused' : 'running';
+  const currentElapsedMs = Math.max(0, Number(serverControl?.currentElapsedMs) || 0);
+  return syncTimerControl({
+    status,
+    elapsedMs: currentElapsedMs,
+    startedAt: status === 'running' ? Date.now() : null,
+  });
+};
+
+const fetchRemoteTimerControl = async () => {
+  const response = await fetch(getTimerControlEndpoint(), {
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Control API returned ${response.status}`);
+  }
+
+  const serverControl = await response.json();
+  apiControlEnabled = true;
+  return syncTimerControlFromServer(serverControl);
+};
+
+const sendRemoteTimerAction = async (action) => {
+  const response = await fetch(getTimerControlEndpoint(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ action }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Control API returned ${response.status}`);
+  }
+
+  const serverControl = await response.json();
+  apiControlEnabled = true;
+  return syncTimerControlFromServer(serverControl);
+};
+
+const refreshTimerControl = async () => {
+  try {
+    return await fetchRemoteTimerControl();
+  } catch {
+    apiControlEnabled = false;
+    return syncTimerControl(readTimerControl());
+  }
+};
+
+const applyTimerAction = async (action) => {
+  if (apiControlEnabled) {
+    try {
+      switch (action) {
+        case 'pause':
+        case 'resume':
+        case 'restart':
+          return await sendRemoteTimerAction(action);
+        default:
+          break;
+      }
+    } catch {
+      apiControlEnabled = false;
+    }
+  }
+
+  switch (action) {
+    case 'pause':
+      return pauseTimer();
+    case 'resume':
+      return resumeTimer();
+    case 'restart':
+      return restartTimer();
+    default:
+      return syncTimerControl(readTimerControl());
+  }
+};
 
 const applyCustomFont = (state) => {
   const existingStyle = document.getElementById('customFontStyle');
@@ -559,7 +647,6 @@ const updatePreviewTime = () => {
     return;
   }
 
-  timerControl = readTimerControl();
   const elapsed = Math.floor(getElapsedMs(timerControl) / 1000);
   DOM.previewTime.textContent = formatTime(getDisplayedSeconds(liveState, elapsed));
 };
@@ -688,19 +775,15 @@ const wireHelper = () => {
     window.open(buildSourceUrl(getStateFromForm()), '_blank', 'noopener,noreferrer');
   });
 
-  DOM.pauseTimerButton.addEventListener('click', () => {
-    if ((timerControl || readTimerControl()).status === 'paused') {
-      resumeTimer();
-      setFeedback('Timer resumed.');
-    } else {
-      pauseTimer();
-      setFeedback('Timer paused.');
-    }
+  DOM.pauseTimerButton.addEventListener('click', async () => {
+    const action = (timerControl || readTimerControl()).status === 'paused' ? 'resume' : 'pause';
+    await applyTimerAction(action);
     renderPreview();
+    setFeedback(action === 'resume' ? 'Timer resumed.' : 'Timer paused.');
   });
 
-  DOM.restartTimerButton.addEventListener('click', () => {
-    restartTimer();
+  DOM.restartTimerButton.addEventListener('click', async () => {
+    await applyTimerAction('restart');
     renderPreview();
     setFeedback('Timer restarted.');
   });
@@ -753,7 +836,6 @@ const renderSource = (state) => {
   DOM.sourceImage.draggable = false;
 
   const tick = () => {
-    timerControl = readTimerControl();
     const elapsed = Math.floor(getElapsedMs(timerControl) / 1000);
     const displaySeconds = getDisplayedSeconds(state, elapsed);
     DOM.sourceTime.textContent = formatTime(displaySeconds);
@@ -834,16 +916,27 @@ const initialize = () => {
 
   if (view === 'source') {
     renderSource(initialState);
+    void refreshTimerControl();
+    controlSyncTimer = window.setInterval(() => {
+      void refreshTimerControl();
+    }, 1000);
     return;
   }
 
   wireHelper();
   renderPreview();
+  void refreshTimerControl();
 
   if (previewTimer) {
     window.clearInterval(previewTimer);
   }
   previewTimer = window.setInterval(updatePreviewTime, 1000);
+  if (controlSyncTimer) {
+    window.clearInterval(controlSyncTimer);
+  }
+  controlSyncTimer = window.setInterval(() => {
+    void refreshTimerControl();
+  }, 1000);
 };
 
 window.addEventListener('storage', (event) => {
