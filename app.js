@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'stream-timer-helper-state';
+const TIMER_CONTROL_KEY = 'stream-timer-control';
 const STORAGE_VERSION = 2;
 const DEFAULT_STATE = {
   title: '',
@@ -35,9 +36,9 @@ const DEFAULT_STATE = {
 const DOM = {};
 let previewTimer = null;
 let sourceTimer = null;
-let sourceStartAt = Date.now();
 let liveState = null;
 let dragPointerId = null;
+let timerControl = null;
 
 const clampNumber = (value, min, max) => {
   const numeric = Number.parseInt(String(value), 10);
@@ -98,6 +99,87 @@ const getFontFamily = (fontKey, customFontFamily = '') => {
       return '"Space Grotesk", "Trebuchet MS", sans-serif';
   }
 };
+
+const createDefaultTimerControl = () => ({
+  status: 'running',
+  elapsedMs: 0,
+  startedAt: Date.now(),
+});
+
+const normalizeTimerControl = (control) => {
+  const normalizedElapsed = Math.max(0, Number(control?.elapsedMs) || 0);
+  const normalizedStatus = control?.status === 'paused' ? 'paused' : 'running';
+  const normalizedStartedAt = normalizedStatus === 'running'
+    ? Math.max(0, Number(control?.startedAt) || Date.now())
+    : null;
+
+  return {
+    status: normalizedStatus,
+    elapsedMs: normalizedElapsed,
+    startedAt: normalizedStartedAt,
+  };
+};
+
+const readTimerControl = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(TIMER_CONTROL_KEY) || 'null');
+    return parsed ? normalizeTimerControl(parsed) : createDefaultTimerControl();
+  } catch {
+    return createDefaultTimerControl();
+  }
+};
+
+const saveTimerControl = (control) => {
+  try {
+    localStorage.setItem(TIMER_CONTROL_KEY, JSON.stringify(control));
+  } catch {
+    // Storage can fail in browser-source sandboxes; ignore it.
+  }
+};
+
+const getElapsedMs = (control = timerControl) => {
+  const normalizedControl = normalizeTimerControl(control || createDefaultTimerControl());
+  if (normalizedControl.status === 'paused') {
+    return normalizedControl.elapsedMs;
+  }
+
+  return normalizedControl.elapsedMs + Math.max(0, Date.now() - normalizedControl.startedAt);
+};
+
+const syncTimerControl = (control) => {
+  timerControl = normalizeTimerControl(control);
+  saveTimerControl(timerControl);
+
+  if (DOM.pauseTimerButton) {
+    DOM.pauseTimerButton.textContent = timerControl.status === 'paused' ? 'Resume timer' : 'Pause timer';
+  }
+
+  if (DOM.restartTimerButton) {
+    DOM.restartTimerButton.disabled = timerControl.status === 'running' && getElapsedMs(timerControl) < 1000;
+  }
+
+  return timerControl;
+};
+
+const pauseTimer = () => {
+  const nextControl = {
+    status: 'paused',
+    elapsedMs: getElapsedMs(timerControl),
+    startedAt: null,
+  };
+  return syncTimerControl(nextControl);
+};
+
+const resumeTimer = () => {
+  const nextControl = {
+    status: 'running',
+    elapsedMs: getElapsedMs(timerControl),
+    startedAt: Date.now(),
+  };
+  return syncTimerControl(nextControl);
+};
+
+const restartTimer = () => syncTimerControl(createDefaultTimerControl());
 
 const applyCustomFont = (state) => {
   const existingStyle = document.getElementById('customFontStyle');
@@ -333,6 +415,7 @@ const updateImagePosition = (event, stageElement) => {
 
 const buildSourceUrl = (state) => {
   const url = new URL(window.location.href);
+  const control = normalizeTimerControl(timerControl || readTimerControl());
   url.searchParams.set('view', 'source');
   if (state.title) {
     url.searchParams.set('title', state.title);
@@ -366,6 +449,9 @@ const buildSourceUrl = (state) => {
   url.searchParams.set('outlineColor', state.outlineColor);
   url.searchParams.set('outlineOpacity', state.outlineOpacity);
   url.searchParams.set('showImage', state.showImage ? '1' : '0');
+  url.searchParams.set('timerStatus', control.status);
+  url.searchParams.set('timerElapsedMs', String(getElapsedMs(control)));
+  url.searchParams.set('timerCapturedAt', String(Date.now()));
 
   const visualImage = getVisualImage(state);
   if (visualImage) {
@@ -379,6 +465,7 @@ const getStateFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
   const state = { ...DEFAULT_STATE };
   const view = params.get('view');
+  let control = null;
 
   if (view === 'source') {
     state.title = params.has('title') ? (params.get('title') ?? '') : '';
@@ -409,10 +496,21 @@ const getStateFromUrl = () => {
     state.showImage = params.get('showImage') !== '0';
     state.imageUrl = params.get('image') ?? '';
     state.imageData = state.imageUrl;
-    return { view, state };
+    const timerStatus = params.get('timerStatus') === 'paused' ? 'paused' : 'running';
+    const timerElapsedMs = Number(params.get('timerElapsedMs') ?? 0) || 0;
+    const timerCapturedAt = Number(params.get('timerCapturedAt') ?? Date.now()) || Date.now();
+    const seededElapsedMs = timerStatus === 'running'
+      ? timerElapsedMs + Math.max(0, Date.now() - timerCapturedAt)
+      : timerElapsedMs;
+    control = normalizeTimerControl({
+      status: timerStatus,
+      elapsedMs: seededElapsedMs,
+      startedAt: timerStatus === 'running' ? Date.now() : null,
+    });
+    return { view, state, control };
   }
 
-  return { view, state: null };
+  return { view, state: null, control: null };
 };
 
 const renderPreview = () => {
@@ -461,7 +559,8 @@ const updatePreviewTime = () => {
     return;
   }
 
-  const elapsed = Math.floor((Date.now() - sourceStartAt) / 1000);
+  timerControl = readTimerControl();
+  const elapsed = Math.floor(getElapsedMs(timerControl) / 1000);
   DOM.previewTime.textContent = formatTime(getDisplayedSeconds(liveState, elapsed));
 };
 
@@ -589,8 +688,26 @@ const wireHelper = () => {
     window.open(buildSourceUrl(getStateFromForm()), '_blank', 'noopener,noreferrer');
   });
 
+  DOM.pauseTimerButton.addEventListener('click', () => {
+    if ((timerControl || readTimerControl()).status === 'paused') {
+      resumeTimer();
+      setFeedback('Timer resumed.');
+    } else {
+      pauseTimer();
+      setFeedback('Timer paused.');
+    }
+    renderPreview();
+  });
+
+  DOM.restartTimerButton.addEventListener('click', () => {
+    restartTimer();
+    renderPreview();
+    setFeedback('Timer restarted.');
+  });
+
   DOM.resetButton.addEventListener('click', () => {
     setFormState(DEFAULT_STATE);
+    restartTimer();
     DOM.imageFileInput.value = '';
     renderPreview();
     setFeedback('Reset to the default timer configuration.');
@@ -636,7 +753,8 @@ const renderSource = (state) => {
   DOM.sourceImage.draggable = false;
 
   const tick = () => {
-    const elapsed = Math.floor((Date.now() - sourceStartAt) / 1000);
+    timerControl = readTimerControl();
+    const elapsed = Math.floor(getElapsedMs(timerControl) / 1000);
     const displaySeconds = getDisplayedSeconds(state, elapsed);
     DOM.sourceTime.textContent = formatTime(displaySeconds);
     DOM.sourceTime.style.textShadow = displaySeconds === 0 && state.mode === 'countdown' ? '0 0 36px rgba(239, 68, 68, 0.18)' : '0 0 30px rgba(251, 191, 36, 0.16)';
@@ -688,6 +806,8 @@ const initialize = () => {
   DOM.resetButton = document.getElementById('resetButton');
   DOM.copyUrlButton = document.getElementById('copyUrlButton');
   DOM.openSourceButton = document.getElementById('openSourceButton');
+  DOM.pauseTimerButton = document.getElementById('pauseTimerButton');
+  DOM.restartTimerButton = document.getElementById('restartTimerButton');
   DOM.copyFeedback = document.getElementById('copyFeedback');
   DOM.previewWidget = document.getElementById('previewWidget');
   DOM.previewStage = document.getElementById('previewStage');
@@ -704,9 +824,11 @@ const initialize = () => {
   DOM.timerForm.appendChild(DOM.imageYInput);
   DOM.timerForm.appendChild(DOM.imageDataInput);
 
-  const { view, state: urlState } = getStateFromUrl();
+  const { view, state: urlState, control: urlControl } = getStateFromUrl();
   const storedState = getStateFromStorage();
   const initialState = view === 'source' ? urlState : storedState ?? DEFAULT_STATE;
+  timerControl = view === 'source' && urlControl ? urlControl : readTimerControl();
+  syncTimerControl(timerControl);
 
   setFormState(initialState);
 
@@ -723,5 +845,16 @@ const initialize = () => {
   }
   previewTimer = window.setInterval(updatePreviewTime, 1000);
 };
+
+window.addEventListener('storage', (event) => {
+  if (event.key !== TIMER_CONTROL_KEY) {
+    return;
+  }
+
+  timerControl = readTimerControl();
+  if (liveState) {
+    renderPreview();
+  }
+});
 
 document.addEventListener('DOMContentLoaded', initialize);
