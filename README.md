@@ -7,6 +7,7 @@ A lightweight timer overlay helper for streaming software.
 - Lets you design a timer overlay in a helper page.
 - Supports count up and count down modes.
 - Lets you choose a title, layout, colors, and image.
+- Supports installed local fonts by family name, or a custom font file URL for browser sources.
 - Generates a shareable browser-source URL for OBS, Streamlabs, and similar apps.
 
 ## How to use
@@ -15,6 +16,13 @@ A lightweight timer overlay helper for streaming software.
 2. Customize the timer in the helper panel.
 3. Click **Copy browser-source URL**.
 4. Paste the URL into your streaming software's browser source.
+
+For custom fonts, either:
+
+- pick **Custom font** and enter the installed font family name exactly as your system sees it, or
+- provide a **Custom font URL** that points to a `.ttf`, `.otf`, `.woff`, or `.woff2` file served over HTTP(S).
+
+Avoid `file:///` font paths in OBS or Streamlabs browser sources. Serve the font from the same local web server instead, for example `http://localhost:5173/fonts/pokemon.ttf`.
 
 ## Streamlabs Custom Widget
 
@@ -47,16 +55,20 @@ The available fields are:
 | `titleColor` | Color | `#f8fafc` |
 | `timerColor` | Color | `#fbbf24` |
 | `backgroundColor` | Color | `#08111f` |
-| `backgroundOpacity` | Slider | `0` |
+| `backgroundOpacity` | Slider | `78` |
 | `showOutline` | Dropdown | `true` |
 | `outlineColor` | Color | `#f8fafc` |
 | `outlineOpacity` | Slider | `18` |
 | `imageUrl` | Image input | An uploaded image |
 | `showImage` | Dropdown | `true` |
 | `imageLayer` | Dropdown | `behind` or `front` |
-| `imagePlacement` | Dropdown | `center`, `top-left`, `top-right`, `bottom-left`, or `bottom-right` |
+| `imagePlacement` | Dropdown | `manual`, `center`, `top-left`, `top-right`, `bottom-left`, or `bottom-right` |
 | `imageSize` | Slider | `72` |
+| `imageX` | Slider | `14` |
+| `imageY` | Slider | `50` |
 | `fontFamily` | Font picker | `Space Grotesk` |
+| `customFontFamily` | Text | `Pokemon Solid` |
+| `customFontUrl` | Text | `http://localhost:5173/fonts/pokemon.ttf` |
 | `soundUrl` | Sound input | Optional finish sound |
 
 The JavaScript listens for Streamlabs' `onWidgetLoad` and `onWidgetUpdate` events, so

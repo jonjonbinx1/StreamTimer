@@ -168,8 +168,21 @@
                 <option value="space">Space Grotesk</option>
                 <option value="pokemon">Pokemon-style pixel</option>
                 <option value="display">Bold display</option>
+                <option value="custom">Custom font</option>
               </select>
             </label>
+
+            <label class="field field-wide">
+              <span>Custom font family</span>
+              <input id="customFontFamilyInput" name="customFontFamily" type="text" placeholder="Pokemon Solid" />
+            </label>
+
+            <label class="field field-wide">
+              <span>Custom font URL</span>
+              <input id="customFontUrlInput" name="customFontUrl" type="url" placeholder="http://localhost:5173/fonts/pokemon.ttf" />
+            </label>
+
+            <p class="field-hint field-wide">Use the installed font name by itself, or provide a font file URL served over HTTP(S). Local file paths such as file:/// are not reliable in browser sources.</p>
           </form>
 
           <div class="action-row">

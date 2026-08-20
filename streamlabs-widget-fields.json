@@ -89,7 +89,7 @@
   "backgroundOpacity": {
     "label": "Background opacity",
     "type": "slider",
-    "value": 0,
+    "value": 78,
     "max": 100,
     "min": 0,
     "steps": 1
@@ -143,13 +143,14 @@
     "label": "Image placement",
     "type": "dropdown",
     "options": {
+      "manual": "Custom",
       "center": "Center",
       "top-left": "Top left",
       "top-right": "Top right",
       "bottom-left": "Bottom left",
       "bottom-right": "Bottom right"
     },
-    "value": "center"
+    "value": "manual"
   },
   "imageSize": {
     "label": "Image size",
@@ -159,10 +160,36 @@
     "min": 24,
     "steps": 1
   },
+  "imageX": {
+    "label": "Image horizontal position",
+    "type": "slider",
+    "value": 14,
+    "max": 100,
+    "min": 0,
+    "steps": 1
+  },
+  "imageY": {
+    "label": "Image vertical position",
+    "type": "slider",
+    "value": 50,
+    "max": 100,
+    "min": 0,
+    "steps": 1
+  },
   "fontFamily": {
     "label": "Timer font",
     "type": "fontpicker",
     "value": "Space Grotesk"
+  },
+  "customFontFamily": {
+    "label": "Custom font family",
+    "type": "textfield",
+    "value": ""
+  },
+  "customFontUrl": {
+    "label": "Custom font URL",
+    "type": "textfield",
+    "value": ""
   },
   "soundUrl": {
     "label": "Finish sound (optional)",

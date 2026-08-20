@@ -16,6 +16,8 @@ const DEFAULT_STATE = {
   backgroundColor: '#08111f',
   backgroundOpacity: '78',
   fontFamily: 'space',
+  customFontFamily: '',
+  customFontUrl: '',
   imageLayer: 'behind',
   imagePlacement: 'manual',
   imageSize: '72',
@@ -74,14 +76,53 @@ const hexToRgba = (hex, alphaPercent) => {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
-const getFontFamily = (fontKey) => {
+const escapeCssString = (value) => String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+const getFontFamily = (fontKey, customFontFamily = '') => {
+  if (fontKey === 'custom') {
+    const trimmedCustomFont = customFontFamily.trim();
+    return trimmedCustomFont
+      ? `"${escapeCssString(trimmedCustomFont)}", "Trebuchet MS", sans-serif`
+      : '"Space Grotesk", "Trebuchet MS", sans-serif';
+  }
+
   switch (fontKey) {
     case 'pokemon':
       return '"Press Start 2P", monospace';
     case 'display':
       return '"Bangers", "Trebuchet MS", sans-serif';
     default:
+      if (fontKey && !['space', 'pokemon', 'display'].includes(fontKey)) {
+        return `"${escapeCssString(String(fontKey).trim())}", "Trebuchet MS", sans-serif`;
+      }
       return '"Space Grotesk", "Trebuchet MS", sans-serif';
+  }
+};
+
+const applyCustomFont = (state) => {
+  const existingStyle = document.getElementById('customFontStyle');
+  const customFontFamily = String(state.customFontFamily || '').trim();
+  const customFontUrl = String(state.customFontUrl || '').trim();
+
+  if (!customFontFamily || !customFontUrl) {
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+    return;
+  }
+
+  let resolvedUrl = customFontUrl;
+  try {
+    resolvedUrl = new URL(customFontUrl, window.location.href).href;
+  } catch {
+    resolvedUrl = customFontUrl;
+  }
+
+  const style = existingStyle || document.createElement('style');
+  style.id = 'customFontStyle';
+  style.textContent = `@font-face { font-family: "${escapeCssString(customFontFamily)}"; src: url("${escapeCssString(resolvedUrl)}"); font-display: swap; }`;
+  if (!existingStyle) {
+    document.head.appendChild(style);
   }
 };
 
@@ -177,6 +218,8 @@ const getStateFromForm = () => ({
   backgroundColor: DOM.backgroundColorInput.value,
   backgroundOpacity: DOM.backgroundOpacityInput.value,
   fontFamily: DOM.fontFamilyInput.value,
+  customFontFamily: DOM.customFontFamilyInput.value.trim(),
+  customFontUrl: DOM.customFontUrlInput.value.trim(),
   imageLayer: DOM.imageLayerInput.value,
   imagePlacement: DOM.imagePlacementInput.value,
   imageSize: DOM.imageSizeInput.value,
@@ -207,6 +250,8 @@ const setFormState = (state) => {
   DOM.backgroundOpacityInput.value = state.backgroundOpacity ?? DEFAULT_STATE.backgroundOpacity;
   DOM.backgroundOpacityValue.textContent = `${clampPercent(state.backgroundOpacity ?? DEFAULT_STATE.backgroundOpacity)}%`;
   DOM.fontFamilyInput.value = state.fontFamily ?? DEFAULT_STATE.fontFamily;
+  DOM.customFontFamilyInput.value = state.customFontFamily ?? DEFAULT_STATE.customFontFamily;
+  DOM.customFontUrlInput.value = state.customFontUrl ?? DEFAULT_STATE.customFontUrl;
   DOM.imageLayerInput.value = state.imageLayer ?? DEFAULT_STATE.imageLayer;
   DOM.imagePlacementInput.value = state.imagePlacement ?? DEFAULT_STATE.imagePlacement;
   DOM.imageSizeInput.value = state.imageSize ?? DEFAULT_STATE.imageSize;
@@ -306,6 +351,12 @@ const buildSourceUrl = (state) => {
   url.searchParams.set('backgroundColor', state.backgroundColor);
   url.searchParams.set('backgroundOpacity', state.backgroundOpacity);
   url.searchParams.set('fontFamily', state.fontFamily);
+  if (state.customFontFamily) {
+    url.searchParams.set('customFontFamily', state.customFontFamily);
+  }
+  if (state.customFontUrl) {
+    url.searchParams.set('customFontUrl', state.customFontUrl);
+  }
   url.searchParams.set('imageLayer', state.imageLayer);
   url.searchParams.set('imagePlacement', state.imagePlacement);
   url.searchParams.set('imageSize', state.imageSize);
@@ -345,6 +396,8 @@ const getStateFromUrl = () => {
     state.backgroundColor = params.get('backgroundColor') ?? state.backgroundColor;
     state.backgroundOpacity = params.get('backgroundOpacity') ?? state.backgroundOpacity;
     state.fontFamily = params.get('fontFamily') ?? state.fontFamily;
+    state.customFontFamily = params.get('customFontFamily') ?? state.customFontFamily;
+    state.customFontUrl = params.get('customFontUrl') ?? state.customFontUrl;
     state.imageLayer = params.get('imageLayer') ?? state.imageLayer;
     state.imagePlacement = params.get('imagePlacement') ?? state.imagePlacement;
     state.imageSize = params.get('imageSize') ?? state.imageSize;
@@ -365,24 +418,25 @@ const getStateFromUrl = () => {
 const renderPreview = () => {
   const state = getStateFromForm();
   liveState = state;
+  applyCustomFont(state);
 
   document.documentElement.style.setProperty('--bg', state.backgroundColor);
   document.documentElement.style.setProperty('--timer', state.timerColor);
   document.documentElement.style.setProperty('--accent', state.accentColor);
   document.documentElement.style.setProperty('--title-color', state.titleColor);
-  document.documentElement.style.setProperty('--widget-font', getFontFamily(state.fontFamily));
+  document.documentElement.style.setProperty('--widget-font', getFontFamily(state.fontFamily, state.customFontFamily));
 
-  DOM.previewWidget.className = `timer-widget ${state.layout}`;
+  const hasOutline = state.showOutline && clampPercent(state.outlineOpacity) > 0;
+  DOM.previewWidget.className = `timer-widget ${state.layout} ${hasOutline ? '' : 'no-outline'}`;
   DOM.previewWidget.style.background = hexToRgba(state.backgroundColor, state.backgroundOpacity);
-  DOM.previewWidget.style.borderColor = state.showOutline
-    ? hexToRgba(state.outlineColor, state.outlineOpacity)
-    : 'transparent';
-  DOM.previewWidget.style.boxShadow = state.showOutline ? 'var(--shadow)' : 'none';
+  DOM.previewWidget.style.setProperty('border-color', hasOutline ? hexToRgba(state.outlineColor, state.outlineOpacity) : 'transparent', 'important');
+  DOM.previewWidget.style.setProperty('border-width', hasOutline ? '1px' : '0', 'important');
+  DOM.previewWidget.style.boxShadow = hasOutline ? 'var(--shadow)' : 'none';
   DOM.previewTitle.textContent = state.title;
   DOM.previewTitle.style.color = state.titleColor;
   DOM.previewTime.style.color = state.timerColor;
-  DOM.previewTitle.style.fontFamily = getFontFamily(state.fontFamily);
-  DOM.previewTime.style.fontFamily = getFontFamily(state.fontFamily);
+  DOM.previewTitle.style.fontFamily = getFontFamily(state.fontFamily, state.customFontFamily);
+  DOM.previewTime.style.fontFamily = getFontFamily(state.fontFamily, state.customFontFamily);
   DOM.backgroundOpacityValue.textContent = `${clampPercent(state.backgroundOpacity)}%`;
   DOM.imageSizeValue.textContent = `${clampNumber(state.imageSize, 24, 240)}px`;
   DOM.outlineOpacityValue.textContent = `${clampPercent(state.outlineOpacity)}%`;
@@ -506,6 +560,8 @@ const wireHelper = () => {
     DOM.backgroundColorInput,
     DOM.backgroundOpacityInput,
     DOM.fontFamilyInput,
+    DOM.customFontFamilyInput,
+    DOM.customFontUrlInput,
     DOM.imageLayerInput,
     DOM.imagePlacementInput,
     DOM.imageSizeInput,
@@ -549,23 +605,24 @@ const renderSource = (state) => {
   document.body.classList.add('source-mode');
   DOM.helperView.classList.add('hidden');
   DOM.sourceView.classList.remove('hidden');
+  applyCustomFont(state);
 
   document.documentElement.style.setProperty('--bg', state.backgroundColor);
   document.documentElement.style.setProperty('--timer', state.timerColor);
   document.documentElement.style.setProperty('--accent', state.accentColor);
-  document.documentElement.style.setProperty('--widget-font', getFontFamily(state.fontFamily));
+  document.documentElement.style.setProperty('--widget-font', getFontFamily(state.fontFamily, state.customFontFamily));
 
-  DOM.sourceWidget.className = `timer-widget ${state.layout}`;
+  const hasOutline = state.showOutline && clampPercent(state.outlineOpacity) > 0;
+  DOM.sourceWidget.className = `timer-widget ${state.layout} ${hasOutline ? '' : 'no-outline'}`;
   DOM.sourceWidget.style.background = hexToRgba(state.backgroundColor, state.backgroundOpacity);
-  DOM.sourceWidget.style.borderColor = state.showOutline
-    ? hexToRgba(state.outlineColor, state.outlineOpacity)
-    : 'transparent';
-  DOM.sourceWidget.style.boxShadow = state.showOutline ? 'var(--shadow)' : 'none';
+  DOM.sourceWidget.style.setProperty('border-color', hasOutline ? hexToRgba(state.outlineColor, state.outlineOpacity) : 'transparent', 'important');
+  DOM.sourceWidget.style.setProperty('border-width', hasOutline ? '1px' : '0', 'important');
+  DOM.sourceWidget.style.boxShadow = hasOutline ? 'var(--shadow)' : 'none';
   DOM.sourceTitle.textContent = state.title;
   DOM.sourceTitle.style.color = state.titleColor;
-  DOM.sourceTitle.style.fontFamily = getFontFamily(state.fontFamily);
+  DOM.sourceTitle.style.fontFamily = getFontFamily(state.fontFamily, state.customFontFamily);
   DOM.sourceTime.style.color = state.timerColor;
-  DOM.sourceTime.style.fontFamily = getFontFamily(state.fontFamily);
+  DOM.sourceTime.style.fontFamily = getFontFamily(state.fontFamily, state.customFontFamily);
   const visualImage = getVisualImage(state);
   DOM.sourceWidget.classList.toggle('has-image', Boolean(visualImage));
   DOM.sourceWidget.classList.toggle('no-image', !visualImage);
@@ -609,6 +666,8 @@ const initialize = () => {
   DOM.backgroundOpacityInput = document.getElementById('backgroundOpacityInput');
   DOM.backgroundOpacityValue = document.getElementById('backgroundOpacityValue');
   DOM.fontFamilyInput = document.getElementById('fontFamilyInput');
+  DOM.customFontFamilyInput = document.getElementById('customFontFamilyInput');
+  DOM.customFontUrlInput = document.getElementById('customFontUrlInput');
   DOM.imageLayerInput = document.getElementById('imageLayerInput');
   DOM.imagePlacementInput = document.getElementById('imagePlacementInput');
   DOM.imageSizeInput = document.getElementById('imageSizeInput');

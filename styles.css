@@ -292,6 +292,17 @@ input[type='file'] {
   pointer-events: none;
 }
 
+.timer-widget.no-outline,
+.timer-widget.no-outline::before {
+  border: 0 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.timer-widget.no-outline::after {
+  display: none !important;
+}
+
 .timer-widget.stacked {
   grid-template-columns: 72px minmax(0, 1fr) auto;
 }
